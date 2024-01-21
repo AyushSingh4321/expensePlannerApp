@@ -8,6 +8,7 @@ class TransactionList extends StatelessWidget {
   TransactionList(this.transaction, this.deleteTx);
   @override
   Widget build(BuildContext context) {
+    print('bulid() TransactionListState');
     return transaction.isEmpty
         ? LayoutBuilder(builder: (ctx, constraints) {
             return Column(
@@ -20,7 +21,7 @@ class TransactionList extends StatelessWidget {
                       fontWeight: FontWeight.bold),
                 ),
                 SizedBox(
-                  height: 40,
+                  height: 25,
                 ),
                 Container(
                     height: constraints.maxHeight * 0.6,

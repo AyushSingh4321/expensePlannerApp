@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 class ChartBar extends StatelessWidget {
   final String label;
   final double spendingAmount;
@@ -8,7 +7,7 @@ class ChartBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('bulid() ChartBar');
+    // print('bulid() ChartBar');
     return LayoutBuilder(
       builder: (ctx, constraints) {
         return Column(

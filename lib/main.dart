@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 import 'dart:io';
+import 'package:expense_planner/helpers/db_helper.dart';
+import 'package:intl/intl.dart';
 import './widgets/transaction_list.dart';
 import './widgets/new_transaction.dart';
 import './models/transaction.dart';
@@ -8,11 +10,6 @@ import './widgets/chart.dart';
 import 'package:flutter/services.dart';
 
 void main() {
-  // WidgetsFlutterBinding.ensureInitialized();
-  // SystemChrome.setPreferredOrientations([
-  //   DeviceOrientation.portraitUp,
-  //   DeviceOrientation.portraitDown,
-  // ]);
   runApp(MyApp());
 }
 
@@ -27,17 +24,6 @@ class MyApp extends StatelessWidget {
       theme: theme.copyWith(
         colorScheme: theme.colorScheme.copyWith(secondary: Colors.amberAccent),
       ),
-      // ThemeData(
-      //         fontFamily: 'Quicksand',
-      // appBarTheme: AppBarTheme(
-      //   toolbarTextStyle: ThemeData.light().textTheme.copyWith(
-      //         headline6: TextStyle(
-      //           fontFamily: 'OpenSans',
-      //           fontSize: 20,
-      //         ),
-      //       ),
-      // )
-      // ),
       home: MyHomePage(),
     );
   }
@@ -49,9 +35,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Transaction> _userTransactions = [];
-
+  List<Transaction> _userTransactions = [];
+   bool _isLoading = false;
   bool _showChart = false;
+
   List<Transaction> get _recentTransactions {
     return _userTransactions.where((tx) {
       return tx.date.isAfter(DateTime.now().subtract(
@@ -60,16 +47,48 @@ class _MyHomePageState extends State<MyHomePage> {
     }).toList();
   }
 
-  void _addNewTransaction(
-      String txTitle, double txAmount, DateTime choosenDate) {
-    final newTx = Transaction(
-        id: DateTime.now().toString(),
-        title: txTitle,
-        amount: txAmount,
-        date: choosenDate);
-    setState(() {
-      _userTransactions.add(newTx);
+  @override
+  void initState() {
+    super.initState();
+    _fetchAndSetTransactions();
+  }
+
+  Future<void> _fetchAndSetTransactions() async {
+     setState(() {
+      _isLoading = true; // Set loading flag to true when fetching starts
     });
+    final dataList = await DbHelper.getData('user_transactions');
+    setState(() {
+      _userTransactions = dataList
+          .map(
+            (item) => Transaction(
+              id: item['id'],
+              title: item['title'],
+              amount: item['amount'],
+              date: DateTime.parse(
+                  item['date'].toString().replaceAll(' – ', 'T')),
+            ),
+          )
+          .toList();
+    });
+     _isLoading = false;
+  }
+
+  void _addNewTransaction(
+      String txTitle, double txAmount, DateTime chosenDate) async {
+    String time = DateTime.now().toString();
+    String formattedDate = chosenDate.toIso8601String(); // Use ISO 8601 format
+    final newTx = Transaction(
+        id: time, title: txTitle, amount: txAmount, date: chosenDate);
+
+    await DbHelper.insert('user_transactions', {
+      'id': time,
+      'title': txTitle,
+      'amount': txAmount,
+      'date': formattedDate,
+    });
+
+    _fetchAndSetTransactions();
   }
 
   void _startAddNewTransaction(BuildContext ctx) {
@@ -80,12 +99,9 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
-  void _deleteTransaction(String id) {
-    setState(() {
-      _userTransactions.removeWhere((tx) {
-        return tx.id == id;
-      });
-    });
+  void _deleteTransaction(String id) async {
+    await DbHelper.delete('user_transactions', id);
+    _fetchAndSetTransactions(); // Refresh the transactions from the database
   }
 
   List<Widget> _buildLandscapeContent(
@@ -138,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    print('bulid() MyHomePageState'); // To check the flow of code...
+    // print('build() MyHomePageState'); // To check the flow of code...
     final mediaQuery = MediaQuery.of(context);
     final isLandscape = mediaQuery.orientation == Orientation.landscape;
     final appBar = AppBar(
@@ -168,7 +184,11 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     return Scaffold(
       appBar: appBar,
-      body: SingleChildScrollView(
+      body:  _isLoading // Show CircularProgressIndicator if loading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[

@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       theme: theme.copyWith(
         colorScheme: theme.colorScheme.copyWith(secondary: Colors.amberAccent),
       ),
-      home:SplashScreen(),
+      home: SplashScreen(),
       routes: {
         MyHomePage.routeName:(ctx) => MyHomePage(),
       },

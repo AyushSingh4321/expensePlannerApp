@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 import 'dart:io';
 import 'package:expense_planner/helpers/db_helper.dart';
+import './screens/splash_screen.dart';
 import 'package:intl/intl.dart';
 import './widgets/transaction_list.dart';
 import './widgets/new_transaction.dart';
@@ -24,12 +25,16 @@ class MyApp extends StatelessWidget {
       theme: theme.copyWith(
         colorScheme: theme.colorScheme.copyWith(secondary: Colors.amberAccent),
       ),
-      home: MyHomePage(),
+      home:SplashScreen(),
+      routes: {
+        MyHomePage.routeName:(ctx) => MyHomePage(),
+      },
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  static const routeName = '/first';
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
